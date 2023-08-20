@@ -34,6 +34,23 @@ function get_related_img($post_id){
   $imgs_path=$sql->fetchAll(PDO::FETCH_COLUMN);
   return $imgs_path;
 }
+function get_related_user_comment($user_id){
+  global $db;
+  $user=array();
+  $sql = $db->prepare('SELECT `username`,`pic_path` FROM `users` WHERE id='.$user_id);
+  $sql->execute();
+  $user=$sql->fetch(PDO::FETCH_ASSOC);
+  return $user;
+}
+function get_related_comments_and_rates($post_id){
+  global $db;
+  $comments_and_rates=array();
+  $sql = $db->prepare('SELECT * FROM `comments_and_rates` WHERE post_id='.$post_id);
+  $sql->execute();
+  $comments_and_rates=$sql->fetchAll(PDO::FETCH_ASSOC);
+  return $comments_and_rates;
+}
+
 // var_dump($post);
 ?>
 
@@ -109,118 +126,150 @@ function get_related_img($post_id){
           <div class="pt-5">
             <p>Categories:  <a href="#">Food</a>, <a href="#">Travel</a> </p>
           </div>
+          <!-- rate a post --> 
+          <form action="rate.php" method="post">
+            <div class="comment-wrap col-12">
+              <input type="number" value=<?php echo $post_id;?> name='post_id' hidden>
+              <input type="text" class="form-control" placeholder="write comment and hover a rate" name="comment">
+              <div class="row">
+                <div class="rating col-7">
+                  <span class="star star1" data-rating="1">&#9733;</span>
+                  <span class="star star2" data-rating="2">&#9733;</span>
+                  <span class="star star3" data-rating="3">&#9733;</span>
+                  <span class="star star4" data-rating="4">&#9733;</span>
+                  <span class="star star5" data-rating="5">&#9733;</span>
+                </div>
+                <input type="number" id="rate" name='rate' hidden>
+                <button id="rateButton" class='btn btn-primary col-4' type='submit'>Rate</button>
+              </div>
+            </div>
+          </form>
+            <!-- <div class="pt-5 comment-wrap"> 
+              <span class="fa fa-star checked"></span>
+              <span class="fa fa-star checked"></span>
+              <span class="fa fa-star checked"></span>
+              <span class="fa fa-star"></span>
+              <span class="fa fa-star"></span>
+            </div> -->
+              <style>
+                /* Default star style */
+                  .star {
+                    font-size: 24px;
+                    color: #ccc;
+                    cursor: pointer;
+                  }
 
+                  /* Gold stars on hover */
+                  .star:hover {
+                    color: gold;
+                  }
 
+                  .selected {
+                    color: orange;
+                  }
+              </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+              <script>
+                $(document).ready(function() {
+    let selectedRating = document.getElementById('rate');
+  
+    // Handle star click events
+    $(".star1").hover(function() {
+      selectedRating.value = $(this).data("rating");
+      // Remove gold color from stars before this one
+      $(".star").removeClass("selected");
+      $(this).addClass("selected");
+    });
+    $(".star2").hover(function() {
+      selectedRating.value = $(this).data("rating");
+      // Remove gold color from stars before this one
+      $(".star").removeClass("selected");
+      $(".star1").addClass("selected");
+      $(this).addClass("selected");
+    });
+    $(".star3").hover(function() {
+        selectedRating.value = $(this).data("rating");
+        // Remove gold color from stars before this one
+        $(".star").removeClass("selected");
+        $(".star1").addClass("selected");
+        $(".star2").addClass("selected");
+        $(this).addClass("selected");
+      });
+    $(".star4").hover(function() {
+        selectedRating.value = $(this).data("rating");
+        // Remove gold color from stars before this one
+        $(".star").removeClass("selected");
+        $(".star1").addClass("selected");
+        $(".star2").addClass("selected");
+        $(".star3").addClass("selected");
+        $(this).addClass("selected");
+    });
+    $(".star5").hover(function() {
+      selectedRating.value = $(this).data("rating");
+      // Remove gold color from stars before this one
+      $(".star").removeClass("selected");
+      $(".star").addClass("selected");
+    });
+  
+    // Handle rate button click
+    $("#rateButton").click(function() {
+      // Send the selectedRating to your server (you'll need AJAX here)
+      // Example AJAX request:
+      /*
+      $.ajax({
+        url: 'rate.php',
+        type: 'POST',
+        data: { rating: selectedRating, post_id: getUrlParameter('id')}, // Replace postId with the actual post ID
+        success: function(response) {
+          // Handle the server response here (e.g., show a success message)
+          alert('Rating submitted successfully!');
+        },
+        error: function() {
+          // Handle any errors that occur during the AJAX request
+          alert('Error submitting rating.');
+        }
+      });
+      
+      function getUrlParameter(name) {
+        name = name.replace(/[\[\]]/g, '\\$&');
+        var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+        var results = regex.exec(window.location.href);
+        if (!results) return null;
+        if (!results[2]) return '';
+        console.log(results[2].replace(/\+/g, ' '));
+        return decodeURIComponent(results[2].replace(/\+/g, ' '));
+      }
+      */
+    });
+  });
+              </script>
+
+          <?php $comments_and_rates=get_related_comments_and_rates($post_id);?>
           <div class="pt-5 comment-wrap">
-            <h3 class="mb-5 heading">6 Comments</h3>
+            <h3 class="mb-5 heading"><?php echo count($comments_and_rates);?> Comments</h3>
             <ul class="comment-list">
+              <?php
+              foreach($comments_and_rates as $car){
+                  $user=get_related_user_comment($car['user_id']);
+              ?>
               <li class="comment">
                 <div class="vcard">
-                  <img src="images/person_1.jpg" alt="Image placeholder">
+                  <img src=<?php echo $user['pic_path'];?> alt="Image placeholder">
                 </div>
                 <div class="comment-body">
-                  <h3>Jean Doe</h3>
-                  <div class="meta">January 9, 2018 at 2:21pm</div>
-                  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Pariatur quidem laborum necessitatibus, ipsam impedit vitae autem, eum officia, fugiat saepe enim sapiente iste iure! Quam voluptas earum impedit necessitatibus, nihil?</p>
-                  <p><a href="#" class="reply rounded">Reply</a></p>
+                  <h3><?php echo $user['username'];?></h3>
+                  <?php 
+                    for($i=0;$i<$car['rate'];$i++){
+                      echo '<span class="star selected" data-rating="1">&#9733;</span>';
+                    }
+                  ?>
+                  <p><?php echo $car['comment'];?></p>
                 </div>
               </li>
-
-              <li class="comment">
-                <div class="vcard">
-                  <img src="images/person_2.jpg" alt="Image placeholder">
-                </div>
-                <div class="comment-body">
-                  <h3>Jean Doe</h3>
-                  <div class="meta">January 9, 2018 at 2:21pm</div>
-                  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Pariatur quidem laborum necessitatibus, ipsam impedit vitae autem, eum officia, fugiat saepe enim sapiente iste iure! Quam voluptas earum impedit necessitatibus, nihil?</p>
-                  <p><a href="#" class="reply rounded">Reply</a></p>
-                </div>
-
-                <ul class="children">
-                  <li class="comment">
-                    <div class="vcard">
-                      <img src="images/person_3.jpg" alt="Image placeholder">
-                    </div>
-                    <div class="comment-body">
-                      <h3>Jean Doe</h3>
-                      <div class="meta">January 9, 2018 at 2:21pm</div>
-                      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Pariatur quidem laborum necessitatibus, ipsam impedit vitae autem, eum officia, fugiat saepe enim sapiente iste iure! Quam voluptas earum impedit necessitatibus, nihil?</p>
-                      <p><a href="#" class="reply rounded">Reply</a></p>
-                    </div>
-
-
-                    <ul class="children">
-                      <li class="comment">
-                        <div class="vcard">
-                          <img src="images/person_4.jpg" alt="Image placeholder">
-                        </div>
-                        <div class="comment-body">
-                          <h3>Jean Doe</h3>
-                          <div class="meta">January 9, 2018 at 2:21pm</div>
-                          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Pariatur quidem laborum necessitatibus, ipsam impedit vitae autem, eum officia, fugiat saepe enim sapiente iste iure! Quam voluptas earum impedit necessitatibus, nihil?</p>
-                          <p><a href="#" class="reply rounded">Reply</a></p>
-                        </div>
-
-                        <ul class="children">
-                          <li class="comment">
-                            <div class="vcard">
-                              <img src="images/person_5.jpg" alt="Image placeholder">
-                            </div>
-                            <div class="comment-body">
-                              <h3>Jean Doe</h3>
-                              <div class="meta">January 9, 2018 at 2:21pm</div>
-                              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Pariatur quidem laborum necessitatibus, ipsam impedit vitae autem, eum officia, fugiat saepe enim sapiente iste iure! Quam voluptas earum impedit necessitatibus, nihil?</p>
-                              <p><a href="#" class="reply rounded">Reply</a></p>
-                            </div>
-                          </li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-
-              <li class="comment">
-                <div class="vcard">
-                  <img src="images/person_1.jpg" alt="Image placeholder">
-                </div>
-                <div class="comment-body">
-                  <h3>Jean Doe</h3>
-                  <div class="meta">January 9, 2018 at 2:21pm</div>
-                  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Pariatur quidem laborum necessitatibus, ipsam impedit vitae autem, eum officia, fugiat saepe enim sapiente iste iure! Quam voluptas earum impedit necessitatibus, nihil?</p>
-                  <p><a href="#" class="reply rounded">Reply</a></p>
-                </div>
-              </li>
+              <?php } ?>
             </ul>
             <!-- END comment-list -->
-
-            <div class="comment-form-wrap pt-5">
-              <h3 class="mb-5">Leave a comment</h3>
-              <form action="#" class="p-5 bg-light">
-                <div class="form-group">
-                  <label for="name">Name *</label>
-                  <input type="text" class="form-control" id="name">
-                </div>
-                <div class="form-group">
-                  <label for="email">Email *</label>
-                  <input type="email" class="form-control" id="email">
-                </div>
-                <div class="form-group">
-                  <label for="website">Website</label>
-                  <input type="url" class="form-control" id="website">
-                </div>
-
-                <div class="form-group">
-                  <label for="message">Message</label>
-                  <textarea name="" id="message" cols="30" rows="10" class="form-control"></textarea>
-                </div>
-                <div class="form-group">
-                  <input type="submit" value="Post Comment" class="btn btn-primary">
-                </div>
-
-              </form>
-            </div>
           </div>
 
         </div>
@@ -261,6 +310,10 @@ function get_related_img($post_id){
       </div>
     </div>
   </section>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- <script src="assets/user/js/rate.js"></script> -->
+
 
 
 <?php include('./inc/footer.php');?>
